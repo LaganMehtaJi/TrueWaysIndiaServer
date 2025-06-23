@@ -4,7 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "test": "nodemon server.js"
+    "test": "app.js"
   },
   "author": "Lagan Mehta",
   "license": "ISC",
