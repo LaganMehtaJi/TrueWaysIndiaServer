@@ -100,7 +100,7 @@ const sendOTP = async (email) => {
   saveUsers(users);
 
   try {
-    await sendOTPEmail({ to: email, otp });
+    sendOTPEmail({ to: email, otp });
     console.log(`📨 OTP Sent to ${email}: ${otp}`);
     return true;
   } catch (err) {

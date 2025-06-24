@@ -4,23 +4,7 @@ import Job from "../models/JobApply.models.js";
 // Apply for a job
 export const ApplyJob = async (req, res) => {
   try {
-    // Parse JSON string sent via FormData from React
- 
-
     const {
-      fullName,              
-      email,
-      contactNumber,
-      address,
-      experience,
-      hasLaptopandInternet,
-      qualification,
-      knowsEnglish,
-    } = req.body.formData;
-   
-    // Get uploaded CV file path (via multer or Cloudinary) 
-  const {cvUrl} =  req.body;
-    const newApplication = new Job({
       fullName,
       email,
       contactNumber,
@@ -29,7 +13,24 @@ export const ApplyJob = async (req, res) => {
       hasLaptopandInternet,
       qualification,
       knowsEnglish,
-      cvUrl
+    } = req.body;
+  console.log(req.body);
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ message: 'No PDF uploaded' });
+    }
+
+    const cvUrl = req.file.path;
+
+    const newApplication = new Job({
+      fullName,
+      email,
+      contactNumber,
+      address,
+      experience,
+      hasLaptopandInternet: hasLaptopandInternet === 'true',
+      qualification,
+      knowsEnglish: knowsEnglish === 'true',
+      cvUrl,
     });
 
     await newApplication.save();
@@ -40,6 +41,7 @@ export const ApplyJob = async (req, res) => {
     res.status(500).json({ error: "Failed to submit job application." });
   }
 };
+
 // Get all job applications
 export const GetAllApply = async (req, res) => {
   try {
