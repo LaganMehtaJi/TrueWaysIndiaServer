@@ -9,7 +9,10 @@ import postJobRoutes from "./routes/vacancy.routes.js";
 dotenv.config();
 ConectDb();
 const app = express();
-app.use(cors(process.env.CORS_URL));
+app.use(cors({
+  origin: process.env.CORS_URL,
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use("/auth",authRoutes);
