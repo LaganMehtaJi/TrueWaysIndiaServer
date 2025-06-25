@@ -20,7 +20,7 @@ app.use("/email",emailRoutes);
 app.use("/job",jobApplyRoutes);
 app.use("/post",postJobRoutes);
 
-
+console.log(process.env.CORS_URL);
 app.listen(process.env.PORT,()=>{
     console.log(`Server Start ${process.env.PORT}`);
 });
