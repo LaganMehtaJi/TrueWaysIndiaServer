@@ -19,8 +19,9 @@ export const VerifyAndSendOtp = async (req, res) => {
    if(isMatch)
     {
       console.log("Hii");
-      sendOTP(email);
-    return res.status(200).json({message: "HR, Otp Send on your Email "});
+     
+    const token = jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: "6h" });
+    return res.status(200).json({ token });
     } 
       return res.status(400).json({ message: "Oops! HR, you’ve entered the wrong Details" });
    }catch(err){
