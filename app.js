@@ -6,6 +6,8 @@ import authRoutes from "./routes/auth.routes.js";
 import emailRoutes from "./routes/emial.routes.js";
 import jobApplyRoutes from "./routes/jobApply.routes.js";
 import postJobRoutes from "./routes/vacancy.routes.js";
+import morgan from "morgan";
+
 dotenv.config();
 ConectDb();
 const app = express();
@@ -14,7 +16,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-
+app.use(morgan("dev"));
 app.use("/auth",authRoutes);
 app.use("/email",emailRoutes);
 app.use("/job",jobApplyRoutes);
