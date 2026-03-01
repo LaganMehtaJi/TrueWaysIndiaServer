@@ -6,6 +6,6 @@ import storage from '../cloudinaryStorage.js';
 const upload = multer({ storage });
 const router = express.Router();
 router.post("/send",upload.single('cv'),Job.ApplyJob);
-router.get("/get",Checktoken,Job.GetAllApply);
-router.post("/delete",Checktoken,Job.DeleteApply);
+router.get("/get",Job.GetAllApply);
+router.post("/delete",Job.DeleteApply);
 export default router;

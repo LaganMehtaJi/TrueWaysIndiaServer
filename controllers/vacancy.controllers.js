@@ -4,7 +4,7 @@ import { isValidObjectId } from 'mongoose';
 
 // ADD POST
 export const AddPost = async (req, res) => {
-
+    console.log("AddPost Request Body:", req.body);
   const { title, description, requirements, benefits } = req.body.jobData;
 
   try {
