@@ -1,195 +1,113 @@
-import express from "express";
 import Post from "../models/vacancymodels.js";
 import { isValidObjectId } from 'mongoose';
 
-// ADD POST
+// --- ADD POST ---
 export const AddPost = async (req, res) => {
-    console.log("AddPost Request Body:", req.body);
-  const { title, description, requirements, benefits } = req.body.jobData;
+  // Direct req.body use karein ya req.body.jobData, 
+  // bas frontend se match hona chahiye. Yahan maine jobData rakha hai.
+  const { title, description, requirements, benefits } = req.body.jobData || req.body;
 
   try {
-    if (!title || !description || !requirements || !benefits) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!title || !description) {
+      return res.status(400).json({ message: "Title and Description are required" });
     }
 
-    const newPost = new Post({ title, description, requirements, benefits });
-    await newPost.save();
+    const newPost = new Post({ 
+      title, 
+      description, 
+      requirements: Array.isArray(requirements) ? requirements : [], 
+      benefits: Array.isArray(benefits) ? benefits : [] 
+    });
 
-    res.status(201).json({ message: "Post added successfully" });
+    await newPost.save();
+    res.status(201).json({ success: true, message: "Post added successfully", data: newPost });
   } catch (err) {
     console.error("AddPost Error:", err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// GET ALL POSTS
+// --- GET ALL POSTS ---
 export const AllPost = async (req, res) => {
   try {
-    
-    const result = await Post.find({});
-
-    if (result.length === 0) {
-      return res.status(200).json({ data: [], message: "No posts available" });
-    }
+    const result = await Post.find({}).sort({ createdAt: -1 }); // Newest first
     res.status(200).json(result);
   } catch (err) {
-    console.error("AllPost Error:", err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// EDIT POST
-
-
-
+// --- EDIT POST ---
 export const EditPost = async (req, res) => {
   try {
-    // Log the incoming request for debugging
-    console.log('Request body:', req.body);
-    
-    // Destructure the request body
     const { _id, currentJob } = req.body;
-    
-    // Validate required fields
-    if (!_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Post ID is required"
-      });
+
+    if (!_id || !isValidObjectId(_id)) {
+      return res.status(400).json({ success: false, message: "Valid Post ID is required" });
     }
 
-    if (!currentJob || !currentJob.title || !currentJob.description) {
-      return res.status(400).json({
-        success: false,
-        message: "Title and description are required"
-      });
-    }
-
-    // Validate ObjectId format
-    if (!isValidObjectId(_id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid post ID format"
-      });
-    }
-
-    // Check if post exists
-    const existingPost = await Post.findById(_id);
-    if (!existingPost) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found"
-      });
-    }
-
-    // Extract fields from currentJob
-    const { title, description, requirements, benefits } = currentJob;
-
-    // Prepare update data with proper formatting
+    // Data formatting logic
     const updateData = {
-      title,
-      description,
-      requirements: Array.isArray(requirements) ? 
-                   requirements : 
-                   (typeof requirements === 'string' ? requirements.split('\n') : []),
-      benefits: Array.isArray(benefits) ? 
-               benefits : 
-               (typeof benefits === 'string' ? benefits.split('\n') : [])
+      title: currentJob.title,
+      description: currentJob.description,
+      requirements: Array.isArray(currentJob.requirements) 
+        ? currentJob.requirements 
+        : (typeof currentJob.requirements === 'string' ? currentJob.requirements.split('\n') : []),
+      benefits: Array.isArray(currentJob.benefits) 
+        ? currentJob.benefits 
+        : (typeof currentJob.benefits === 'string' ? currentJob.benefits.split('\n') : [])
     };
 
-    // Clean arrays by removing empty strings
-    if (Array.isArray(updateData.requirements)) {
-      updateData.requirements = updateData.requirements.filter(item => item.trim() !== '');
-    }
-    if (Array.isArray(updateData.benefits)) {
-      updateData.benefits = updateData.benefits.filter(item => item.trim() !== '');
-    }
+    // Clean empty entries
+    updateData.requirements = updateData.requirements.map(s => s.trim()).filter(Boolean);
+    updateData.benefits = updateData.benefits.map(s => s.trim()).filter(Boolean);
 
-    // Update the post
     const updatedPost = await Post.findByIdAndUpdate(
       _id,
       { $set: updateData },
-      { 
-        new: true, 
-        runValidators: true,
-        context: 'query' // Ensures validators run with the update operation
-      }
+      { new: true, runValidators: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Post updated successfully",
-      data: updatedPost
-    });
+    if (!updatedPost) return res.status(404).json({ message: "Post not found" });
 
+    res.status(200).json({ success: true, message: "Updated successfully", data: updatedPost });
   } catch (err) {
-    console.error("EditPost Error:", err);
-    
-    // Handle specific error types
-    if (err.name === 'ValidationError') {
-      const errors = Object.values(err.errors).map(el => el.message);
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        errors: errors
-      });
-    }
-    
-    if (err.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID format"
-      });
-    }
-    
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
-// DELETE POST
-export const DeletePost = async (req, res) => {
 
-  const {title } = req.body;
-    console.log(title);
+// --- DELETE POST (BY ID) ---
+// --- DELETE POST ---
+export const DeletePost = async (req, res) => {
+  let postId = req.params.id || req.body._id || req.body.id;
 
   try {
-    if (!title) {
-      return res.status(400).json({ message: "Title is required" });
+    if (!postId || !isValidObjectId(postId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Valid Post ID is required" 
+      });
     }
 
-    const result = await Post.deleteOne({ title });
+    const result = await Post.findByIdAndDelete(postId);
 
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Post not found" });
+    if (!result) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Post not found" 
+      });
     }
 
-    res.status(200).json({ message: "Post deleted successfully", result: true });
+    res.status(200).json({ 
+      success: true, 
+      message: "Post deleted successfully" 
+    });
   } catch (err) {
     console.error("DeletePost Error:", err);
-    res.status(500).json({ message: "Server error", error: err });
-  }
-};
-
-export const GetPostByTitle = async (req, res) => {
-  const { title } = req.params;
-
-  try {
-    if (!title) {
-      return res.status(400).json({ message: "Title parameter is required" });
-    }
-
-    const post = await Post.findOne({ title });
-
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    res.status(200).json({ data: post, message: "Post fetched successfully" });
-  } catch (err) {
-    console.error("GetPostByTitle Error:", err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: err.message 
+    });
   }
 };

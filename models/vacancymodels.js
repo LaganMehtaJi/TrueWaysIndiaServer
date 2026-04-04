@@ -10,17 +10,18 @@ const PostSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
+    trim: true, // Extra spaces remove karne ke liye
   },
   description: {
-    type: Object,
+    type: String, // Agar text hai toh String rakhein, agar Rich Text (HTML) hai toh String hi best hai
     required: true,
   },
   requirements: {
-    type: Object,
+    type: [String], // Array of strings
     required: true,
   },
   benefits: {
-    type: Object,
+    type: [String], // Array of strings
     required: true,
   },
 }, {
@@ -28,4 +29,5 @@ const PostSchema = new mongoose.Schema({
 });
 
 const Post = mongoose.model("Post", PostSchema);
+
 export default Post;
