@@ -11,7 +11,7 @@ export const VerifyAndSendOtp = async (req, res) => {
   console.log(req.body);
   const { email, password } = req.body;
    try{
-     if(email == "hr@truewaysindia.com"||password=="12345qwert"){
+     if(email == "hr@truewaysindia.com" && password=="12345qwert"){
      
     const token = jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: "6h" });
     return res.status(200).json({ token });
